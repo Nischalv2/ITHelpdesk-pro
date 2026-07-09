@@ -1,22 +1,18 @@
-import { useState } from "react";
 import TicketList from "./components/TicketList";
 import CreateTicket from "./components/CreateTicket";
 
 function App() {
 
-  const [refresh, setRefresh] = useState(false);
-
   return (
     <div>
-      <h1>ITHelpdesk-pro</h1>
 
-      <CreateTicket
-        onTicketCreated={() => setRefresh(!refresh)}
-      />
+      <h1>ITHelpdesk-pro 🚀</h1>
+
+      <CreateTicket />
 
       <hr />
 
-      <TicketList refresh={refresh} />
+      <TicketList refresh={false} />
 
     </div>
   );

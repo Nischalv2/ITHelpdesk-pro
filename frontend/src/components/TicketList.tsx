@@ -30,6 +30,25 @@ function TicketList({ refresh }: Props) {
     }
   };
 
+  const updateStatus = async (
+    id: string,
+    status: string
+  ) => {
+    try {
+      await axios.put(
+        `http://localhost:5001/api/tickets/${id}`,
+        {
+          status,
+        }
+      );
+
+      fetchTickets();
+
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
   }, [refresh]);
@@ -40,12 +59,40 @@ function TicketList({ refresh }: Props) {
 
       {tickets.map((ticket) => (
         <div key={ticket._id}>
+
           <h3>{ticket.title}</h3>
+
           <p>{ticket.description}</p>
-          <p>Category: {ticket.category}</p>
-          <p>Priority: {ticket.priority}</p>
-          <p>Status: {ticket.status}</p>
+
+          <p>
+            Category: {ticket.category}
+          </p>
+
+          <p>
+            Priority: {ticket.priority}
+          </p>
+
+          <label>
+            Status:
+          </label>
+
+          <select
+            value={ticket.status}
+            onChange={(e) =>
+              updateStatus(
+                ticket._id,
+                e.target.value
+              )
+            }
+          >
+            <option>Open</option>
+            <option>In Progress</option>
+            <option>In Review</option>
+            <option>Done</option>
+          </select>
+
           <hr />
+
         </div>
       ))}
     </div>

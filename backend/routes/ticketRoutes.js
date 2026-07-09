@@ -3,15 +3,18 @@ const Ticket = require("../models/Ticket");
 
 const router = express.Router();
 
-// Test route
+// Get all tickets
 router.get("/", async (req, res) => {
   try {
     const tickets = await Ticket.find();
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 });
+
 
 // Create ticket
 router.post("/", async (req, res) => {
@@ -28,5 +31,27 @@ router.post("/", async (req, res) => {
     });
   }
 });
+
+
+// Update ticket status
+router.put("/:id", async (req, res) => {
+  try {
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: req.body.status
+      },
+      { new: true }
+    );
+
+    res.json(ticket);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
 
 module.exports = router;

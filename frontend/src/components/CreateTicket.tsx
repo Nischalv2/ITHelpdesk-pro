@@ -1,107 +1,91 @@
 import { useState } from "react";
 import axios from "axios";
 
-interface Props {
-  onTicketCreated: () => void;
-}
+function CreateTicket() {
 
-function CreateTicket({ onTicketCreated }: Props) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Network");
-  const [priority, setPriority] = useState("Medium");
+  const [ticket, setTicket] = useState({
+    title: "",
+    description: "",
+    category: "",
+    priority: "Low"
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setTicket({
+      ...ticket,
+      [e.target.name]: e.target.value
+    });
+  };
 
+
+  const createTicket = async () => {
     try {
-      await axios.post("http://localhost:5001/api/tickets", {
-        title,
-        description,
-        category,
-        priority,
-      });
+      await axios.post(
+        "http://localhost:5001/api/tickets",
+        ticket
+      );
 
-      alert("Ticket created successfully!");
-       onTicketCreated();
-      setTitle("");
-      setDescription("");
-      setCategory("Network");
-      setPriority("Medium");
+      alert("Ticket created!");
 
-    } catch (error) {
-      console.error("Error creating ticket:", error);
-      alert("Failed to create ticket");
+      window.location.reload();
+
+    } catch(error) {
+      console.error(error);
+      alert("Error creating ticket");
     }
   };
 
+
   return (
     <div>
-      <h2>Create New Ticket</h2>
 
-      <form onSubmit={handleSubmit}>
+      <h2>Create Ticket</h2>
 
-        <div>
-          <label>Title:</label>
-          <br />
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter issue title"
-          />
-        </div>
+      <input
+        name="title"
+        placeholder="Issue title"
+        value={ticket.title}
+        onChange={handleChange}
+      />
 
-        <br />
+      <br />
 
-        <div>
-          <label>Description:</label>
-          <br />
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the problem"
-          />
-        </div>
+      <textarea
+        name="description"
+        placeholder="Description"
+        value={ticket.description}
+        onChange={handleChange}
+      />
 
-        <br />
+      <br />
 
-        <div>
-          <label>Category:</label>
-          <br />
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option>Network</option>
-            <option>Hardware</option>
-            <option>Software</option>
-            <option>Account</option>
-          </select>
-        </div>
+      <input
+        name="category"
+        placeholder="Category"
+        value={ticket.category}
+        onChange={handleChange}
+      />
 
-        <br />
+      <br />
 
-        <div>
-          <label>Priority:</label>
-          <br />
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-          >
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-            <option>Critical</option>
-          </select>
-        </div>
+      <select
+        name="priority"
+        value={ticket.priority}
+        onChange={handleChange}
+      >
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+      </select>
 
-        <br />
+      <br />
 
-        <button type="submit">
-          Create Ticket
-        </button>
+      <button onClick={createTicket}>
+        Submit Ticket
+      </button>
 
-      </form>
     </div>
   );
 }

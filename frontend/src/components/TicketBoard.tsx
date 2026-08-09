@@ -10,78 +10,98 @@ interface Ticket {
   status: string;
 }
 
+interface TicketBoardProps {
+  refresh: boolean;
+}
+
 const columns = [
   "Open",
   "In Progress",
   "In Review",
-  "Done"
+  "Done",
 ];
 
-function TicketBoard() {
+function TicketBoard({ refresh }: TicketBoardProps) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchTickets = async () => {
     try {
+      setLoading(true);
+
       const response = await axios.get(
         "http://localhost:5001/api/tickets"
       );
 
       setTickets(response.data);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching tickets:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchTickets();
-  }, []);
+  }, [refresh]);
+
+  if (loading) {
+    return (
+      <div className="loading-card">
+        Loading tickets...
+      </div>
+    );
+  }
 
   return (
-    <div style={{
-      display: "flex",
-      gap: "20px"
-    }}>
+    <div className="board">
+      {columns.map((column) => {
+        const columnTickets = tickets.filter(
+          (ticket) => ticket.status === column
+        );
 
-      {columns.map((column) => (
-        <div
-          key={column}
-          style={{
-            width: "250px",
-            border: "1px solid gray",
-            padding: "10px"
-          }}
-        >
+        return (
+          <div
+            className="board-column"
+            key={column}
+          >
+            <div className="board-column-header">
+              <h3>{column}</h3>
 
-          <h3>{column}</h3>
+              <span>
+                {columnTickets.length}
+              </span>
+            </div>
 
-          {tickets
-            .filter(ticket => ticket.status === column)
-            .map(ticket => (
-
+            {columnTickets.map((ticket) => (
               <div
+                className="board-ticket"
                 key={ticket._id}
-                style={{
-                  border: "1px solid #ddd",
-                  marginBottom: "10px",
-                  padding: "10px"
-                }}
               >
+                <span
+                  className={`priority-badge ${ticket.priority.toLowerCase()}`}
+                >
+                  {ticket.priority}
+                </span>
 
                 <h4>{ticket.title}</h4>
 
                 <p>{ticket.description}</p>
 
                 <small>
-                  {ticket.category} | {ticket.priority}
+                  📁 {ticket.category}
                 </small>
-
               </div>
+            ))}
 
-          ))}
-
-        </div>
-      ))}
-
+            {columnTickets.length === 0 && (
+              <div className="board-empty">
+                No tickets
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

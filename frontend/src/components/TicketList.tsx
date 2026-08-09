@@ -25,7 +25,7 @@ function TicketList({ refresh }: Props) {
       setLoading(true);
 
       const response = await axios.get(
-        "http://localhost:5001/api/tickets"
+        "https://ithelpdesk-pro.onrender.com/api/tickets"
       );
 
       setTickets(response.data);
@@ -42,7 +42,7 @@ function TicketList({ refresh }: Props) {
   ) => {
     try {
       await axios.put(
-        `http://localhost:5001/api/tickets/${id}`,
+        `https://ithelpdesk-pro.onrender.com/api/tickets/${id}`,
         {
           status,
         }

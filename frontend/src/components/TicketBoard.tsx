@@ -30,7 +30,7 @@ function TicketBoard({ refresh }: TicketBoardProps) {
       setLoading(true);
 
       const response = await axios.get(
-        "http://localhost:5001/api/tickets"
+        "https://ithelpdesk-pro.onrender.com/api/tickets"
       );
 
       setTickets(response.data);

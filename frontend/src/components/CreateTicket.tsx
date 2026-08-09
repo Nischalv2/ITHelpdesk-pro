@@ -38,7 +38,7 @@ function CreateTicket({ onCreated }: CreateTicketProps) {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:5001/api/tickets",
+        "https://ithelpdesk-pro.onrender.com/api/tickets",
         ticket
       );
 

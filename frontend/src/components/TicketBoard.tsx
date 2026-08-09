@@ -8,6 +8,8 @@ interface Ticket {
   category: string;
   priority: string;
   status: string;
+  assignedTo?: string;
+  createdAt?: string;
 }
 
 interface TicketBoardProps {
@@ -29,13 +31,36 @@ function TicketBoard({ refresh }: TicketBoardProps) {
     try {
       setLoading(true);
 
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("No authentication token found.");
+        setTickets([]);
+        return;
+      }
+
       const response = await axios.get(
-        "https://ithelpdesk-pro.onrender.com/api/tickets"
+        "https://ithelpdesk-pro.onrender.com/api/tickets",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       setTickets(response.data);
     } catch (error) {
       console.error("Error fetching tickets:", error);
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          alert("Your login session has expired. Please log in again.");
+        }
+
+        if (error.response?.status === 403) {
+          alert("You do not have permission to view tickets.");
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -47,14 +72,14 @@ function TicketBoard({ refresh }: TicketBoardProps) {
 
   if (loading) {
     return (
-      <div className="loading-card">
+      <div className="loading">
         Loading tickets...
       </div>
     );
   }
 
   return (
-    <div className="board">
+    <div className="ticket-board">
       {columns.map((column) => {
         const columnTickets = tickets.filter(
           (ticket) => ticket.status === column
@@ -91,6 +116,12 @@ function TicketBoard({ refresh }: TicketBoardProps) {
                 <small>
                   📁 {ticket.category}
                 </small>
+
+                {ticket.assignedTo && (
+                  <small>
+                    👤 {ticket.assignedTo}
+                  </small>
+                )}
               </div>
             ))}
 

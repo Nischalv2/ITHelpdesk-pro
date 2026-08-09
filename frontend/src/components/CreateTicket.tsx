@@ -34,10 +34,15 @@ function CreateTicket({ onCreated }: CreateTicketProps) {
       return;
     }
 
-       try {
+    try {
       setLoading(true);
 
       const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("You must be logged in to create a ticket.");
+        return;
+      }
 
       await axios.post(
         "https://ithelpdesk-pro.onrender.com/api/tickets",
@@ -59,28 +64,34 @@ function CreateTicket({ onCreated }: CreateTicketProps) {
       });
 
       onCreated();
-
-      setTicket({
-        title: "",
-        description: "",
-        category: "Other",
-        priority: "Low",
-      });
-
-      onCreated();
     } catch (error) {
       console.error("Error creating ticket:", error);
-      alert("Error creating ticket. Make sure the backend is running.");
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          alert("Your login session has expired. Please log in again.");
+        } else if (error.response?.status === 403) {
+          alert("You do not have permission to create tickets.");
+        } else {
+          alert(
+            error.response?.data?.message ||
+              "Error creating ticket. Please try again."
+          );
+        }
+      } else {
+        alert("Error creating ticket. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="create-ticket-card">
-      <div className="card-header">
+    <section className="create-ticket-section">
+      <div className="section-title">
+        <span className="section-icon">＋</span>
+
         <div>
-          <span className="card-icon">＋</span>
           <h2>Create Ticket</h2>
           <p>Submit a new IT support request.</p>
         </div>
@@ -97,6 +108,7 @@ function CreateTicket({ onCreated }: CreateTicketProps) {
             placeholder="Issue title"
             value={ticket.title}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -110,6 +122,7 @@ function CreateTicket({ onCreated }: CreateTicketProps) {
             value={ticket.description}
             onChange={handleChange}
             rows={4}
+            required
           />
         </div>
 

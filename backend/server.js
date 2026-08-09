@@ -4,6 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const ticketRoutes = require("./routes/ticketRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -37,3 +38,4 @@ app.get("/", (req, res) => {
 
 // Ticket Routes
 app.use("/api/tickets", ticketRoutes);
+app.use("/api/auth", authRoutes);

@@ -34,15 +34,31 @@ function CreateTicket({ onCreated }: CreateTicketProps) {
       return;
     }
 
-    try {
+       try {
       setLoading(true);
+
+      const token = localStorage.getItem("token");
 
       await axios.post(
         "https://ithelpdesk-pro.onrender.com/api/tickets",
-        ticket
+        ticket,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       alert("Ticket created successfully!");
+
+      setTicket({
+        title: "",
+        description: "",
+        category: "Other",
+        priority: "Low",
+      });
+
+      onCreated();
 
       setTicket({
         title: "",

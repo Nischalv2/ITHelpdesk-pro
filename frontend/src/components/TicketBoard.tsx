@@ -8,7 +8,12 @@ interface Ticket {
   category: string;
   priority: string;
   status: string;
-  assignedTo?: string;
+  assignedTo?: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
   createdAt?: string;
 }
 
@@ -119,7 +124,7 @@ function TicketBoard({ refresh }: TicketBoardProps) {
 
                 {ticket.assignedTo && (
                   <small>
-                    👤 {ticket.assignedTo}
+                    👤 {ticket.assignedTo.name}
                   </small>
                 )}
               </div>

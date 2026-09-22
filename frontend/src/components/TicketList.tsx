@@ -35,6 +35,8 @@ function TicketList({ refresh }: Props) {
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState<string | null>(null);
 
+  const API_URL = "https://ithelpdesk-pro.onrender.com";
+
   const getToken = () => {
     return localStorage.getItem("token");
   };
@@ -76,16 +78,16 @@ const fetchTickets = async () => {
     const user = getUser();
 
     let endpoint =
-      "http://localhost:5001/api/tickets";
+      `${API_URL}/api/tickets`;
 
     if (user?.role === "technician") {
       endpoint =
-        "http://localhost:5001/api/tickets/assigned";
+        `${API_URL}/api/tickets/assigned`;
     }
 
     if (user?.role === "user") {
       endpoint =
-        "http://localhost:5001/api/tickets/my";
+        `${API_URL}/api/tickets/my`;
     }
 
     const response = await axios.get(endpoint, {
@@ -131,7 +133,7 @@ const fetchTickets = async () => {
       }
 
       const response = await axios.get(
-        "http://localhost:5001/api/tickets/technicians",
+        `${API_URL}/api/auth/technicians`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -180,7 +182,7 @@ const fetchTickets = async () => {
       setAssigning(ticketId);
 
       await axios.put(
-        `http://localhost:5001/api/tickets/${ticketId}/assign`,
+        `${API_URL}/api/tickets/${ticketId}/assign`,
         {
           technicianId,
         },
@@ -253,9 +255,7 @@ const fetchTickets = async () => {
       }
 
       await axios.put(
-        //`https://ithelpdesk-pro.onrender.com/api/tickets/${id}`,
-        
-  `http://localhost:5001/api/tickets/${id}`,{
+        `${API_URL}/api/tickets/${id}`,{
           status,
         },
         {

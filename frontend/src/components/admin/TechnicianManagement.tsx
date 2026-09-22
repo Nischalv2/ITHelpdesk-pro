@@ -28,7 +28,7 @@ function TechnicianManagement() {
       }
 
       const response = await axios.get(
-        "http://localhost:5001/api/auth/technicians",
+        "https://ithelpdesk-pro.onrender.com/api/auth/technicians",
         {
           headers: {
             Authorization: `Bearer ${token}`,

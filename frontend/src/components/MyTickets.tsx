@@ -39,7 +39,7 @@ function MyTickets({ refresh }: Props) {
       }
 
       const response = await axios.get(
-        "http://localhost:5001/api/tickets/my",
+        "https://ithelpdesk-pro.onrender.com/api/tickets/my",
         {
           headers: {
             Authorization: `Bearer ${token}`,

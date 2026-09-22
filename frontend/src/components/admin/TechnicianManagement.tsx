@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-interface Technician {
+interface User {
   _id: string;
   name: string;
   email: string;
-  role: "technician";
+  role: "user" | "technician" | "admin";
 }
 
 function TechnicianManagement() {
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
 
   const getToken = () => {
     return localStorage.getItem("token");
   };
 
-  const fetchTechnicians = async () => {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
 
@@ -28,7 +29,7 @@ function TechnicianManagement() {
       }
 
       const response = await axios.get(
-        "https://ithelpdesk-pro.onrender.com/api/auth/technicians",
+        `${import.meta.env.VITE_API_URL}/api/auth/users`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -36,14 +37,14 @@ function TechnicianManagement() {
         }
       );
 
-      setTechnicians(response.data);
+      setUsers(response.data);
     } catch (error) {
-      console.error("Error fetching technicians:", error);
+      console.error("Error fetching users:", error);
 
       if (axios.isAxiosError(error)) {
         alert(
           error.response?.data?.message ||
-            "Unable to load technicians."
+            "Unable to load users."
         );
       }
     } finally {
@@ -51,14 +52,64 @@ function TechnicianManagement() {
     }
   };
 
+  const changeRole = async (
+    userId: string,
+    newRole: "user" | "technician"
+  ) => {
+    try {
+      const token = getToken();
+
+      if (!token) {
+        alert("Authentication required.");
+        return;
+      }
+
+      setUpdatingUser(userId);
+
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_URL}/api/auth/users/${userId}/role`,
+        {
+          role: newRole,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user._id === userId
+            ? {
+                ...user,
+                role: response.data.user.role,
+              }
+            : user
+        )
+      );
+    } catch (error) {
+      console.error("Error changing user role:", error);
+
+      if (axios.isAxiosError(error)) {
+        alert(
+          error.response?.data?.message ||
+            "Unable to change user role."
+        );
+      }
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
   useEffect(() => {
-    fetchTechnicians();
+    fetchUsers();
   }, []);
 
   if (loading) {
     return (
       <section className="admin-section">
-        <p>Loading technicians...</p>
+        <p>Loading users...</p>
       </section>
     );
   }
@@ -69,43 +120,77 @@ function TechnicianManagement() {
         <div>
           <span className="eyebrow">ADMINISTRATION</span>
 
-          <h2>Technician Management</h2>
+          <h2>User &amp; Role Management</h2>
 
           <p>
-            Manage technicians who can handle IT support tickets.
+            Manage users and assign responsibilities within the
+            IT helpdesk.
           </p>
         </div>
       </div>
 
-      {technicians.length === 0 ? (
+      {users.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">👨‍💻</div>
+          <div className="empty-icon">👥</div>
 
-          <h3>No technicians found</h3>
+          <h3>No users found</h3>
 
           <p>
-            There are currently no technicians in the system.
+            There are currently no users in the system.
           </p>
         </div>
       ) : (
         <div className="technician-list">
-          {technicians.map((technician) => (
+          {users.map((user) => (
             <article
               className="technician-card"
-              key={technician._id}
+              key={user._id}
             >
               <div className="technician-avatar">
-                👨‍💻
+                {user.role === "admin"
+                  ? "🛡️"
+                  : user.role === "technician"
+                  ? "👨‍💻"
+                  : "👤"}
               </div>
 
               <div className="technician-info">
-                <h3>{technician.name}</h3>
+                <h3>{user.name}</h3>
 
-                <p>{technician.email}</p>
+                <p>{user.email}</p>
 
                 <span className="status-badge">
-                  TECHNICIAN
+                  {user.role.toUpperCase()}
                 </span>
+              </div>
+
+              <div>
+                {user.role === "admin" ? (
+                  <span>Admin account</span>
+                ) : (
+                  <select
+                    value={user.role}
+                    disabled={updatingUser === user._id}
+                    onChange={(event) =>
+                      changeRole(
+                        user._id,
+                        event.target.value as
+                          | "user"
+                          | "technician"
+                      )
+                    }
+                  >
+                    <option value="user">User</option>
+
+                    <option value="technician">
+                      Technician
+                    </option>
+                  </select>
+                )}
+
+                {updatingUser === user._id && (
+                  <p>Updating...</p>
+                )}
               </div>
             </article>
           ))}

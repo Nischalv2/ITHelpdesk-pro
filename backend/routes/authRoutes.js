@@ -217,4 +217,87 @@ router.get(
     }
   }
 );
+// =====================================================
+// GET ALL USERS
+// Admin only
+// =====================================================
+
+router.get(
+  "/users",
+  authenticate,
+  authorize("admin"),
+  async (req, res) => {
+    try {
+      const users = await User.find(
+        {},
+        "name email role"
+      ).sort({ name: 1 });
+
+      res.json(users);
+    } catch (error) {
+      console.error("Get users error:", error);
+
+      res.status(500).json({
+        message: "Failed to get users",
+      });
+    }
+  }
+);
+
+// =====================================================
+// CHANGE USER ROLE
+// Admin only
+// =====================================================
+
+router.put(
+  "/users/:id/role",
+  authenticate,
+  authorize("admin"),
+  async (req, res) => {
+    try {
+      const { role } = req.body;
+      const userId = req.params.id;
+
+      if (!["user", "technician"].includes(role)) {
+        return res.status(400).json({
+          message: "Invalid role",
+        });
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
+
+      // Prevent changing the admin account
+      if (user.role === "admin") {
+        return res.status(403).json({
+          message: "Admin role cannot be changed",
+        });
+      }
+
+      user.role = role;
+      await user.save();
+
+      res.json({
+        message: `User role changed to ${role}`,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (error) {
+      console.error("Change user role error:", error);
+
+      res.status(500).json({
+        message: "Failed to change user role",
+      });
+    }
+  }
+);
 module.exports = router;

@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+interface Technician {
+  _id: string;
+  name: string;
+  email: string;
+  role: "technician";
+}
+
 interface Ticket {
   _id: string;
   title: string;
@@ -8,7 +15,13 @@ interface Ticket {
   category: string;
   priority: string;
   status: string;
-  assignedTo?: string;
+  assignedTo?: Technician | null;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
   createdAt?: string;
 }
 
@@ -18,7 +31,9 @@ interface Props {
 
 function TicketList({ refresh }: Props) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState<string | null>(null);
 
   const getToken = () => {
     return localStorage.getItem("token");
@@ -38,20 +53,85 @@ function TicketList({ refresh }: Props) {
     }
   };
 
-  const fetchTickets = async () => {
+  // =====================================================
+  // FETCH TICKETS
+  // =====================================================
+
+  // =====================================================
+// FETCH TICKETS
+// =====================================================
+
+const fetchTickets = async () => {
+  try {
+    setLoading(true);
+
+    const token = getToken();
+
+    if (!token) {
+      console.error("No authentication token found.");
+      setTickets([]);
+      return;
+    }
+
+    const user = getUser();
+
+    let endpoint =
+      "http://localhost:5001/api/tickets";
+
+    if (user?.role === "technician") {
+      endpoint =
+        "http://localhost:5001/api/tickets/assigned";
+    }
+
+    if (user?.role === "user") {
+      endpoint =
+        "http://localhost:5001/api/tickets/my";
+    }
+
+    const response = await axios.get(endpoint, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setTickets(response.data);
+  } catch (error) {
+    console.error(
+      "Error fetching tickets:",
+      error
+    );
+
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        alert(
+          "Your login session has expired. Please log in again."
+        );
+      } else if (error.response?.status === 403) {
+        alert(
+          "You do not have permission to view tickets."
+        );
+      }
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+  // =====================================================
+  // FETCH TECHNICIANS
+  // Admin only
+  // =====================================================
+
+  const fetchTechnicians = async () => {
     try {
-      setLoading(true);
-
       const token = getToken();
+      const user = getUser();
 
-      if (!token) {
-        console.error("No authentication token found.");
-        setTickets([]);
+      if (!token || user?.role !== "admin") {
         return;
       }
 
       const response = await axios.get(
-        "https://ithelpdesk-pro.onrender.com/api/tickets",
+        "http://localhost:5001/api/tickets/technicians",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -59,21 +139,94 @@ function TicketList({ refresh }: Props) {
         }
       );
 
-      setTickets(response.data);
+      setTechnicians(response.data);
     } catch (error) {
-      console.error("Error fetching tickets:", error);
+      console.error(
+        "Error fetching technicians:",
+        error
+      );
+    }
+  };
+
+  // =====================================================
+  // ASSIGN TECHNICIAN
+  // Admin only
+  // =====================================================
+
+  const assignTechnician = async (
+    ticketId: string,
+    technicianId: string
+  ) => {
+    try {
+      const token = getToken();
+      const user = getUser();
+
+      if (!token) {
+        alert("You must be logged in.");
+        return;
+      }
+
+      if (!user || user.role !== "admin") {
+        alert(
+          "Only administrators can assign technicians."
+        );
+        return;
+      }
+
+      if (!technicianId) {
+        return;
+      }
+
+      setAssigning(ticketId);
+
+      await axios.put(
+        `http://localhost:5001/api/tickets/${ticketId}/assign`,
+        {
+          technicianId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      alert("Technician assigned successfully.");
+
+      await fetchTickets();
+    } catch (error) {
+      console.error(
+        "Error assigning technician:",
+        error
+      );
 
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          alert("Your login session has expired. Please log in again.");
+          alert(
+            "Your login session has expired. Please log in again."
+          );
         } else if (error.response?.status === 403) {
-          alert("You do not have permission to view tickets.");
+          alert(
+            "Only administrators can assign technicians."
+          );
+        } else {
+          alert(
+            error.response?.data?.message ||
+              "Unable to assign technician."
+          );
         }
+      } else {
+        alert("Unable to assign technician.");
       }
     } finally {
-      setLoading(false);
+      setAssigning(null);
     }
   };
+
+  // =====================================================
+  // UPDATE STATUS
+  // Admin and technician
+  // =====================================================
 
   const updateStatus = async (
     id: string,
@@ -90,15 +243,19 @@ function TicketList({ refresh }: Props) {
 
       if (
         !user ||
-        (user.role !== "admin" && user.role !== "technician")
+        (user.role !== "admin" &&
+          user.role !== "technician")
       ) {
-        alert("Only administrators and technicians can change ticket status.");
+        alert(
+          "Only administrators and technicians can change ticket status."
+        );
         return;
       }
 
       await axios.put(
-        `https://ithelpdesk-pro.onrender.com/api/tickets/${id}`,
-        {
+        //`https://ithelpdesk-pro.onrender.com/api/tickets/${id}`,
+        
+  `http://localhost:5001/api/tickets/${id}`,{
           status,
         },
         {
@@ -110,11 +267,16 @@ function TicketList({ refresh }: Props) {
 
       await fetchTickets();
     } catch (error) {
-      console.error("Error updating ticket status:", error);
+      console.error(
+        "Error updating ticket status:",
+        error
+      );
 
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          alert("Your login session has expired. Please log in again.");
+          alert(
+            "Your login session has expired. Please log in again."
+          );
         } else if (error.response?.status === 403) {
           alert(
             "Only administrators and technicians can change ticket status."
@@ -131,16 +293,17 @@ function TicketList({ refresh }: Props) {
     }
   };
 
+  // =====================================================
+  // LOAD DATA
+  // =====================================================
+
   useEffect(() => {
     fetchTickets();
+    fetchTechnicians();
   }, [refresh]);
 
   if (loading) {
-    return (
-      <div className="loading-state">
-        Loading tickets...
-      </div>
-    );
+    return <p>Loading tickets...</p>;
   }
 
   if (tickets.length === 0) {
@@ -151,7 +314,8 @@ function TicketList({ refresh }: Props) {
         <h3>No tickets yet</h3>
 
         <p>
-          There are currently no support tickets to display.
+          There are currently no support tickets
+          to display.
         </p>
       </div>
     );
@@ -163,6 +327,8 @@ function TicketList({ refresh }: Props) {
     user?.role === "admin" ||
     user?.role === "technician";
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <div className="ticket-list">
       {tickets.map((ticket) => (
@@ -170,8 +336,8 @@ function TicketList({ refresh }: Props) {
           className="ticket-card"
           key={ticket._id}
         >
-          <div className="ticket-card-header">
-            <div className="ticket-badges">
+          <div className="ticket-header">
+            <div>
               <span
                 className={`priority-badge ${ticket.priority.toLowerCase()}`}
               >
@@ -212,6 +378,70 @@ function TicketList({ refresh }: Props) {
               </span>
             )}
           </div>
+
+          {/* =====================================================
+              ASSIGNED TECHNICIAN
+              Admin only
+          ===================================================== */}
+
+          {isAdmin && (
+            <div className="ticket-actions">
+              <label
+                htmlFor={`technician-${ticket._id}`}
+              >
+                Assigned Technician
+              </label>
+
+              <select
+                id={`technician-${ticket._id}`}
+                value={
+                  ticket.assignedTo?._id || ""
+                }
+                disabled={
+                  assigning === ticket._id
+                }
+                onChange={(e) =>
+                  assignTechnician(
+                    ticket._id,
+                    e.target.value
+                  )
+                }
+              >
+                <option value="">
+                  Select technician
+                </option>
+
+                {technicians.map(
+                  (technician) => (
+                    <option
+                      key={technician._id}
+                      value={technician._id}
+                    >
+                      {technician.name}
+                    </option>
+                  )
+                )}
+              </select>
+
+              {assigning === ticket._id && (
+                <small>
+                  Assigning technician...
+                </small>
+              )}
+
+              {ticket.assignedTo && (
+                <small>
+                  Assigned to:{" "}
+                  {ticket.assignedTo.name}
+                </small>
+              )}
+            </div>
+          )}
+
+          {/* =====================================================
+              UPDATE STATUS
+              Admin and technician
+          ===================================================== */}
 
           {canUpdateStatus && (
             <div className="ticket-actions">

@@ -31,15 +31,18 @@ const ticketSchema = new mongoose.Schema(
       default: "Open",
     },
 
+    // Technician assigned to this ticket
     assignedTo: {
-      type: String,
-      default: "",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
 
+    // User who created the ticket
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: false,
+      required: true,
     },
   },
   {

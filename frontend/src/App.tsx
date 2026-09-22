@@ -4,6 +4,8 @@ import Register from "./components/auth/Register";
 import TicketList from "./components/TicketList";
 import CreateTicket from "./components/CreateTicket";
 import TicketBoard from "./components/TicketBoard";
+import TechnicianManagement from "./components/admin/TechnicianManagement";
+import MyTickets from "./components/MyTickets";
 
 type User = {
   id: string;
@@ -151,6 +153,11 @@ function App() {
         <CreateTicket
           onCreated={handleTicketCreated}
         />
+        {user.role === "user" && (
+  <MyTickets
+    refresh={refresh}
+  />
+)}
 
         {canViewTickets && (
           <section className="ticket-section">
@@ -211,18 +218,21 @@ function App() {
 
           </section>
         )}
+            {user.role === "admin" && (
+      <TechnicianManagement />
+    )}
 
-        {user.role === "user" && (
-          <section className="user-notice">
-            <h3>Ticket submitted to IT Support</h3>
+    {user.role === "user" && (
+      <section className="user-notice">
+        <h3>Ticket submitted to IT Support</h3>
 
-            <p>
-              Your request has been sent to the IT
-              support team. A technician or administrator
-              will handle it.
-            </p>
-          </section>
-        )}
+        <p>
+          Your request has been sent to the IT
+          support team. A technician or administrator
+          will handle it.
+        </p>
+      </section>
+    )}
 
       </main>
 

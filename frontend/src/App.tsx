@@ -145,9 +145,7 @@ function App() {
             </p>
           </div>
 
-          <div className="hero-icon">
-            🎫
-          </div>
+          
         </section>
 
         <CreateTicket

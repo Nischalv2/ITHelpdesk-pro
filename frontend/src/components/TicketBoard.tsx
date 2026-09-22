@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+interface Technician {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface Ticket {
   _id: string;
   title: string;
@@ -8,12 +15,7 @@ interface Ticket {
   category: string;
   priority: string;
   status: string;
-  assignedTo?: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-  } | null;
+  assignedTo?: Technician | null;
   createdAt?: string;
 }
 
@@ -31,6 +33,7 @@ const columns = [
 function TicketBoard({ refresh }: TicketBoardProps) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingTicket, setUpdatingTicket] = useState<string | null>(null);
 
   const fetchTickets = async () => {
     try {
@@ -68,6 +71,58 @@ function TicketBoard({ refresh }: TicketBoardProps) {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateStatus = async (
+    ticketId: string,
+    newStatus: string
+  ) => {
+    try {
+      setUpdatingTicket(ticketId);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Your login session has expired. Please log in again.");
+        return;
+      }
+
+      await axios.put(
+        `https://ithelpdesk-pro.onrender.com/api/tickets/${ticketId}`,
+        {
+          status: newStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setTickets((currentTickets) =>
+        currentTickets.map((ticket) =>
+          ticket._id === ticketId
+            ? { ...ticket, status: newStatus }
+            : ticket
+        )
+      );
+    } catch (error) {
+      console.error("Error updating ticket status:", error);
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          alert("Your login session has expired. Please log in again.");
+        } else if (error.response?.status === 403) {
+          alert("You do not have permission to update this ticket.");
+        } else {
+          alert("Failed to update ticket status.");
+        }
+      } else {
+        alert("Failed to update ticket status.");
+      }
+    } finally {
+      setUpdatingTicket(null);
     }
   };
 
@@ -125,6 +180,26 @@ function TicketBoard({ refresh }: TicketBoardProps) {
                 {ticket.assignedTo && (
                   <small>
                     👤 {ticket.assignedTo.name}
+                  </small>
+                )}
+
+                <select
+                  value={ticket.status}
+                  onChange={(event) =>
+                    updateStatus(ticket._id, event.target.value)
+                  }
+                  disabled={updatingTicket === ticket._id}
+                >
+                  {columns.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+
+                {updatingTicket === ticket._id && (
+                  <small>
+                    Updating...
                   </small>
                 )}
               </div>
